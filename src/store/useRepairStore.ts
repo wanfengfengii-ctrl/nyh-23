@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { RepairTask, RepairFilterState, RepairEditMode, OperationLog, RepairProblemType, QualityCheckResult, Cylinder, RepairTaskStatus } from '../types';
 import { mockRepairTasks, mockOperationLogs, repairStaff } from '../data/mockData';
 import { validateRepairTask, validateQualityCheck } from '../utils/validators';
+import { generateId, getCurrentTimestamp, buildSearchFilter, calculatePageAfterDelete } from '../utils/common';
 
 interface RepairState {
   repairTasks: RepairTask[];
@@ -51,14 +52,18 @@ const initialFilters: RepairFilterState = {
   problemType: '',
 };
 
-function generateId(prefix: string): string {
-  const timestamp = Date.now();
-  const random = Math.floor(Math.random() * 1000);
-  return `${prefix}-${timestamp}-${random}`;
-}
+const searchFields: (keyof RepairTask)[] = ['id', 'title'];
 
-function getCurrentTimestamp(): string {
-  return new Date().toISOString().replace('T', ' ').substring(0, 19);
+function applyRepairFilters(tasks: RepairTask[], filters: RepairFilterState): RepairTask[] {
+  const searchFilter = buildSearchFilter(searchFields, filters.search);
+
+  return tasks.filter((t) => {
+    if (!searchFilter(t)) return false;
+    if (filters.status && t.status !== filters.status) return false;
+    if (filters.assignee && t.assignee !== filters.assignee) return false;
+    if (filters.problemType && !t.problemTypes.includes(filters.problemType as RepairProblemType)) return false;
+    return true;
+  });
 }
 
 export const useRepairStore = create<RepairState>((set, get) => ({
@@ -88,30 +93,8 @@ export const useRepairStore = create<RepairState>((set, get) => ({
   deleteRepairTask: (id) =>
     set((state) => {
       const newTasks = state.repairTasks.filter((t) => t.id !== id);
-      const filteredAfter = newTasks.filter((t) => {
-        if (state.filters.search) {
-          const searchLower = state.filters.search.toLowerCase();
-          if (
-            !t.id.toLowerCase().includes(searchLower) &&
-            !t.title.toLowerCase().includes(searchLower)
-          ) {
-            return false;
-          }
-        }
-        if (state.filters.status && t.status !== state.filters.status) return false;
-        if (state.filters.assignee && t.assignee !== state.filters.assignee) return false;
-        if (state.filters.problemType && !t.problemTypes.includes(state.filters.problemType as RepairProblemType)) return false;
-        return true;
-      });
-
-      const totalPages = Math.ceil(filteredAfter.length / state.pageSize);
-      let newPage = state.page;
-      if (totalPages > 0 && state.page >= totalPages) {
-        newPage = totalPages - 1;
-      }
-      if (totalPages === 0) {
-        newPage = 0;
-      }
+      const filteredAfter = applyRepairFilters(newTasks, state.filters);
+      const newPage = calculatePageAfterDelete(state.page, state.pageSize, filteredAfter.length);
 
       return {
         repairTasks: newTasks,
@@ -156,21 +139,7 @@ export const useRepairStore = create<RepairState>((set, get) => ({
 
   getFilteredTasks: () => {
     const { repairTasks, filters } = get();
-    return repairTasks.filter((t) => {
-      if (filters.search) {
-        const searchLower = filters.search.toLowerCase();
-        if (
-          !t.id.toLowerCase().includes(searchLower) &&
-          !t.title.toLowerCase().includes(searchLower)
-        ) {
-          return false;
-        }
-      }
-      if (filters.status && t.status !== filters.status) return false;
-      if (filters.assignee && t.assignee !== filters.assignee) return false;
-      if (filters.problemType && !t.problemTypes.includes(filters.problemType as RepairProblemType)) return false;
-      return true;
-    });
+    return applyRepairFilters(repairTasks, filters);
   },
 
   setPage: (page) => set({ page }),

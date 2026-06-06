@@ -14,6 +14,7 @@ import {
   validateBorrowReturn,
   validateBorrowApproval,
 } from '../utils/validators';
+import { generateId, generateNo, getCurrentTimestamp, getTodayDateString, buildSearchFilter, buildDateRangeFilter, calculatePageAfterDelete, countByFieldValue, countByCondition } from '../utils/common';
 
 interface BorrowState {
   borrowRecords: BorrowRecord[];
@@ -64,25 +65,7 @@ const initialFilters: BorrowFilterState = {
   dateRange: null,
 };
 
-function generateId(prefix: string): string {
-  const timestamp = Date.now();
-  const random = Math.floor(Math.random() * 1000);
-  return `${prefix}-${timestamp}-${random}`;
-}
-
-function generateApplicationNo(): string {
-  const year = new Date().getFullYear();
-  const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-  return `JY-${year}-${random}`;
-}
-
-function getCurrentTimestamp(): string {
-  return new Date().toISOString().replace('T', ' ').substring(0, 19);
-}
-
-function getTodayDateString(): string {
-  return new Date().toISOString().split('T')[0];
-}
+const searchFields: (keyof BorrowRecord)[] = ['applicationNo', 'cylinderTitle', 'cylinderId', 'applicant'];
 
 function getActualReturnStatus(record: BorrowRecord): BorrowReturnStatus {
   if (record.returnStatus === '已归还' || record.returnStatus === '损坏待复核') {
@@ -99,6 +82,20 @@ function getActualReturnStatus(record: BorrowRecord): BorrowReturnStatus {
     return '超期';
   }
   return record.returnStatus;
+}
+
+function applyBorrowFilters(records: BorrowRecord[], filters: BorrowFilterState, getStatus: (r: BorrowRecord) => BorrowReturnStatus): BorrowRecord[] {
+  const searchFilter = buildSearchFilter(searchFields, filters.search);
+  const dateFilter = buildDateRangeFilter<BorrowRecord>('borrowDate', filters.dateRange);
+
+  return records.filter((r) => {
+    if (!searchFilter(r)) return false;
+    if (!dateFilter(r)) return false;
+    if (filters.borrowType && r.borrowType !== filters.borrowType) return false;
+    if (filters.approvalStatus && r.approvalStatus !== filters.approvalStatus) return false;
+    if (filters.returnStatus && getStatus(r) !== filters.returnStatus) return false;
+    return true;
+  });
 }
 
 export const useBorrowStore = create<BorrowState>((set, get) => ({
@@ -129,31 +126,8 @@ export const useBorrowStore = create<BorrowState>((set, get) => ({
   deleteBorrowRecord: (id) =>
     set((state) => {
       const newRecords = state.borrowRecords.filter((r) => r.id !== id);
-      const filteredAfter = newRecords.filter((r) => {
-        if (state.filters.search) {
-          const searchLower = state.filters.search.toLowerCase();
-          if (
-            !r.applicationNo.toLowerCase().includes(searchLower) &&
-            !r.cylinderTitle.toLowerCase().includes(searchLower) &&
-            !r.cylinderId.toLowerCase().includes(searchLower)
-          ) {
-            return false;
-          }
-        }
-        if (state.filters.borrowType && r.borrowType !== state.filters.borrowType) return false;
-        if (state.filters.approvalStatus && r.approvalStatus !== state.filters.approvalStatus) return false;
-        if (state.filters.returnStatus && r.returnStatus !== state.filters.returnStatus) return false;
-        return true;
-      });
-
-      const totalPages = Math.ceil(filteredAfter.length / state.pageSize);
-      let newPage = state.page;
-      if (totalPages > 0 && state.page >= totalPages) {
-        newPage = totalPages - 1;
-      }
-      if (totalPages === 0) {
-        newPage = 0;
-      }
+      const filteredAfter = applyBorrowFilters(newRecords, state.filters, getActualReturnStatus);
+      const newPage = calculatePageAfterDelete(state.page, state.pageSize, filteredAfter.length);
 
       return {
         borrowRecords: newRecords,
@@ -198,28 +172,7 @@ export const useBorrowStore = create<BorrowState>((set, get) => ({
 
   getFilteredRecords: () => {
     const { borrowRecords, filters } = get();
-    return borrowRecords.filter((r) => {
-      if (filters.search) {
-        const searchLower = filters.search.toLowerCase();
-        if (
-          !r.applicationNo.toLowerCase().includes(searchLower) &&
-          !r.cylinderTitle.toLowerCase().includes(searchLower) &&
-          !r.cylinderId.toLowerCase().includes(searchLower) &&
-          !r.applicant.toLowerCase().includes(searchLower)
-        ) {
-          return false;
-        }
-      }
-      if (filters.borrowType && r.borrowType !== filters.borrowType) return false;
-      if (filters.approvalStatus && r.approvalStatus !== filters.approvalStatus) return false;
-      if (filters.returnStatus && getActualReturnStatus(r) !== filters.returnStatus) return false;
-      if (filters.dateRange && filters.dateRange[0] && filters.dateRange[1]) {
-        if (r.borrowDate < filters.dateRange[0] || r.borrowDate > filters.dateRange[1]) {
-          return false;
-        }
-      }
-      return true;
-    });
+    return applyBorrowFilters(borrowRecords, filters, getActualReturnStatus);
   },
 
   setPage: (page) => set({ page }),
@@ -243,7 +196,7 @@ export const useBorrowStore = create<BorrowState>((set, get) => ({
 
     const newRecord: BorrowRecord = {
       id: generateId('BOR'),
-      applicationNo: generateApplicationNo(),
+      applicationNo: generateNo('JY'),
       cylinderId: cylinder.id,
       cylinderTitle: cylinder.title,
       borrowType: data.borrowType || '馆内借阅',
@@ -339,21 +292,17 @@ export const useBorrowStore = create<BorrowState>((set, get) => ({
     const { borrowRecords, getActualReturnStatus: getStatus } = get();
 
     const totalBorrows = borrowRecords.length;
-    const currentlyBorrowed = borrowRecords.filter(
-      (r) => {
-        const actualStatus = getStatus(r);
-        return r.approvalStatus === '审批通过' &&
-          (actualStatus === '未归还' || actualStatus === '超期' || actualStatus === '损坏待复核');
-      }
-    ).length;
-    const overdue = borrowRecords.filter(
-      (r) => getStatus(r) === '超期'
-    ).length;
-    const returned = borrowRecords.filter((r) => getStatus(r) === '已归还').length;
-    const internalBorrows = borrowRecords.filter((r) => r.borrowType === '馆内借阅').length;
-    const externalExhibitions = borrowRecords.filter((r) => r.borrowType === '外部借展').length;
-    const pendingApproval = borrowRecords.filter((r) => r.approvalStatus === '待审批').length;
-    const damagePending = borrowRecords.filter((r) => getStatus(r) === '损坏待复核').length;
+    const currentlyBorrowed = countByCondition(borrowRecords, (r) => {
+      const actualStatus = getStatus(r);
+      return r.approvalStatus === '审批通过' &&
+        (actualStatus === '未归还' || actualStatus === '超期' || actualStatus === '损坏待复核');
+    });
+    const overdue = countByCondition(borrowRecords, (r) => getStatus(r) === '超期');
+    const returned = countByCondition(borrowRecords, (r) => getStatus(r) === '已归还');
+    const internalBorrows = countByFieldValue(borrowRecords, 'borrowType', '馆内借阅');
+    const externalExhibitions = countByFieldValue(borrowRecords, 'borrowType', '外部借展');
+    const pendingApproval = countByFieldValue(borrowRecords, 'approvalStatus', '待审批');
+    const damagePending = countByCondition(borrowRecords, (r) => getStatus(r) === '损坏待复核');
 
     return {
       totalBorrows,

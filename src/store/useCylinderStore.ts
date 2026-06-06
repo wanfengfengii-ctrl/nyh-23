@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { Cylinder, FilterState, EditMode, Crack } from '../types';
 import { mockCylinders } from '../data/mockData';
+import { calculatePageAfterDelete, buildSearchFilter } from '../utils/common';
 
 interface CylinderState {
   cylinders: Cylinder[];
@@ -43,6 +44,24 @@ const initialFilters: FilterState = {
   hasSevereCrack: null,
 };
 
+const searchFields: (keyof Cylinder)[] = ['id', 'title'];
+
+function applyCylinderFilters(cylinders: Cylinder[], filters: FilterState): Cylinder[] {
+  const searchFilter = buildSearchFilter(searchFields, filters.search);
+
+  return cylinders.filter((c) => {
+    if (!searchFilter(c)) return false;
+    if (filters.status && c.currentStatus !== filters.status) return false;
+    if (filters.noiseLevel && c.noiseLevel !== filters.noiseLevel) return false;
+    if (filters.materialStatus && c.materialStatus !== filters.materialStatus) return false;
+    if (filters.hasSevereCrack !== null) {
+      const hasSevere = c.cracks.some((cr) => cr.severity === '严重');
+      if (filters.hasSevereCrack !== hasSevere) return false;
+    }
+    return true;
+  });
+}
+
 export const useCylinderStore = create<CylinderState>((set, get) => ({
   cylinders: mockCylinders,
   selectedCylinderId: null,
@@ -69,35 +88,8 @@ export const useCylinderStore = create<CylinderState>((set, get) => ({
   deleteCylinder: (id) =>
     set((state) => {
       const newCylinders = state.cylinders.filter((c) => c.id !== id);
-
-      const filteredAfter = newCylinders.filter((c) => {
-        if (state.filters.search) {
-          const searchLower = state.filters.search.toLowerCase();
-          if (
-            !c.id.toLowerCase().includes(searchLower) &&
-            !c.title.toLowerCase().includes(searchLower)
-          ) {
-            return false;
-          }
-        }
-        if (state.filters.status && c.currentStatus !== state.filters.status) return false;
-        if (state.filters.noiseLevel && c.noiseLevel !== state.filters.noiseLevel) return false;
-        if (state.filters.materialStatus && c.materialStatus !== state.filters.materialStatus) return false;
-        if (state.filters.hasSevereCrack !== null) {
-          const hasSevere = c.cracks.some((cr) => cr.severity === '严重');
-          if (state.filters.hasSevereCrack !== hasSevere) return false;
-        }
-        return true;
-      });
-
-      const totalPages = Math.ceil(filteredAfter.length / state.pageSize);
-      let newPage = state.page;
-      if (totalPages > 0 && state.page >= totalPages) {
-        newPage = totalPages - 1;
-      }
-      if (totalPages === 0) {
-        newPage = 0;
-      }
+      const filteredAfter = applyCylinderFilters(newCylinders, state.filters);
+      const newPage = calculatePageAfterDelete(state.page, state.pageSize, filteredAfter.length);
 
       return {
         cylinders: newCylinders,
@@ -139,25 +131,7 @@ export const useCylinderStore = create<CylinderState>((set, get) => ({
 
   getFilteredCylinders: () => {
     const { cylinders, filters } = get();
-    return cylinders.filter((c) => {
-      if (filters.search) {
-        const searchLower = filters.search.toLowerCase();
-        if (
-          !c.id.toLowerCase().includes(searchLower) &&
-          !c.title.toLowerCase().includes(searchLower)
-        ) {
-          return false;
-        }
-      }
-      if (filters.status && c.currentStatus !== filters.status) return false;
-      if (filters.noiseLevel && c.noiseLevel !== filters.noiseLevel) return false;
-      if (filters.materialStatus && c.materialStatus !== filters.materialStatus) return false;
-      if (filters.hasSevereCrack !== null) {
-        const hasSevere = c.cracks.some((cr) => cr.severity === '严重');
-        if (filters.hasSevereCrack !== hasSevere) return false;
-      }
-      return true;
-    });
+    return applyCylinderFilters(cylinders, filters);
   },
 
   setPage: (page) => set({ page }),

@@ -3,11 +3,9 @@ import {
   Drawer,
   Box,
   Typography,
-  IconButton,
   Tabs,
   Tab,
   Divider,
-  Button,
   Chip,
   TextField,
   FormControl,
@@ -19,14 +17,20 @@ import {
   FormControlLabel,
   Checkbox,
   Alert,
+  Button,
+  IconButton,
+  ListItem,
+  ListItemText,
+  ListItemButton,
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import AssignmentIcon from '@mui/icons-material/Assignment';
+import CloseIcon from '@mui/icons-material/Close';
+import { TabPanel, InfoRow } from './shared';
 import { useRepairStore } from '../store/useRepairStore';
 import { useCylinderStore } from '../store/useCylinderStore';
 import {
@@ -38,24 +42,6 @@ import { validateRepairTask } from '../utils/validators';
 import { repairStaff, qualityInspectors } from '../data/mockData';
 import type { RepairTask, RepairProblemType, QualityCheckResult } from '../types';
 import OperationLogList from './OperationLogList';
-
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
-
-const TabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => {
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      style={{ padding: '16px 24px 24px' }}
-    >
-      {value === index && <Box>{children}</Box>}
-    </div>
-  );
-};
 
 const RepairTaskDrawer: React.FC = () => {
   const {
@@ -824,16 +810,5 @@ const RepairTaskDrawer: React.FC = () => {
     </Drawer>
   );
 };
-
-const InfoRow: React.FC<{ label: string; value: string }> = ({ label, value }) => (
-  <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 1, borderBottom: '1px dashed', borderColor: 'divider' }}>
-    <Typography variant="body2" color="text.secondary">
-      {label}
-    </Typography>
-    <Typography variant="body2" sx={{ fontWeight: 500, textAlign: 'right', flex: 1, ml: 2 }}>
-      {value || '-'}
-    </Typography>
-  </Box>
-);
 
 export default RepairTaskDrawer;

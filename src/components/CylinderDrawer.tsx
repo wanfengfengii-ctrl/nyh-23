@@ -3,24 +3,25 @@ import {
   Drawer,
   Box,
   Typography,
-  IconButton,
   Tabs,
   Tab,
   Divider,
-  Button,
   Chip,
   Alert,
   List,
   ListItem,
   ListItemText,
   ListItemButton,
+  IconButton,
+  Button,
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AddIcon from '@mui/icons-material/Add';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import CloseIcon from '@mui/icons-material/Close';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { TabPanel, InfoRow } from './shared';
 import { useCylinderStore } from '../store/useCylinderStore';
 import { useRepairStore } from '../store/useRepairStore';
 import CylinderForm from './CylinderForm';
@@ -39,24 +40,6 @@ import {
   canArchiveWithQualityCheck,
 } from '../utils/validators';
 import type { Cylinder, RepairProblemType } from '../types';
-
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
-
-const TabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => {
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      style={{ padding: '16px 24px 24px' }}
-    >
-      {value === index && <Box>{children}</Box>}
-    </div>
-  );
-};
 
 const CylinderDrawer: React.FC = () => {
   const {
@@ -599,16 +582,5 @@ const CylinderDrawer: React.FC = () => {
     </Drawer>
   );
 };
-
-const InfoRow: React.FC<{ label: string; value: string }> = ({ label, value }) => (
-  <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 1, borderBottom: '1px dashed', borderColor: 'divider' }}>
-    <Typography variant="body2" color="text.secondary">
-      {label}
-    </Typography>
-    <Typography variant="body2" sx={{ fontWeight: 500 }}>
-      {value || '-'}
-    </Typography>
-  </Box>
-);
 
 export default CylinderDrawer;

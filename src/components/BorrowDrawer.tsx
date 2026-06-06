@@ -25,6 +25,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import HowToRegIcon from '@mui/icons-material/HowToReg';
 import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
 import BugReportIcon from '@mui/icons-material/BugReport';
+import { TabPanel } from './shared';
 import { useBorrowStore } from '../store/useBorrowStore';
 import { useCylinderStore } from '../store/useCylinderStore';
 import {
@@ -34,24 +35,6 @@ import {
 } from '../utils/formatters';
 import { canBorrow, getBorrowRestrictionReason } from '../utils/validators';
 import type { BorrowRecord, BorrowType, BorrowApprovalStatus, Cylinder } from '../types';
-
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
-
-const TabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => {
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      style={{ padding: '16px 24px 24px' }}
-    >
-      {value === index && <Box>{children}</Box>}
-    </div>
-  );
-};
 
 const InfoRow: React.FC<{ label: string; value: string; multiline?: boolean }> = ({ label, value, multiline }) => (
   <Box>

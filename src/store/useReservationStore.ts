@@ -12,6 +12,7 @@ import type {
 } from '../types';
 import { mockReservations, borrowApprovers, borrowers } from '../data/mockData';
 import { canBorrow, getBorrowRestrictionReason } from '../utils/validators';
+import { generateId, generateNo, getCurrentTimestamp, getTodayDateString, datesOverlap, addDays, buildSearchFilter, buildDateRangeOverlapFilter, calculatePageAfterDelete, countByFieldValue, countByCondition, getMonthStart, getNextMonthStart } from '../utils/common';
 
 interface ReservationState {
   reservations: ReservationRecord[];
@@ -80,34 +81,21 @@ const initialFilters: ReservationFilterState = {
   cylinderId: '',
 };
 
-function generateId(prefix: string): string {
-  const timestamp = Date.now();
-  const random = Math.floor(Math.random() * 1000);
-  return `${prefix}-${timestamp}-${random}`;
-}
+const searchFields: (keyof ReservationRecord)[] = ['reservationNo', 'cylinderTitle', 'cylinderId', 'applicant'];
 
-function generateReservationNo(): string {
-  const year = new Date().getFullYear();
-  const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-  return `YY-${year}-${random}`;
-}
+function applyReservationFilters(records: ReservationRecord[], filters: ReservationFilterState): ReservationRecord[] {
+  const searchFilter = buildSearchFilter(searchFields, filters.search);
+  const dateFilter = buildDateRangeOverlapFilter<ReservationRecord>('startDate', 'endDate', filters.dateRange);
 
-function getCurrentTimestamp(): string {
-  return new Date().toISOString().replace('T', ' ').substring(0, 19);
-}
-
-function getTodayDateString(): string {
-  return new Date().toISOString().split('T')[0];
-}
-
-function datesOverlap(start1: string, end1: string, start2: string, end2: string): boolean {
-  return start1 <= end2 && start2 <= end1;
-}
-
-function addDays(dateStr: string, days: number): string {
-  const date = new Date(dateStr);
-  date.setDate(date.getDate() + days);
-  return date.toISOString().split('T')[0];
+  return records.filter((r) => {
+    if (!searchFilter(r)) return false;
+    if (!dateFilter(r)) return false;
+    if (filters.priority && r.priority !== filters.priority) return false;
+    if (filters.status && r.status !== filters.status) return false;
+    if (filters.conflictStatus && r.conflictStatus !== filters.conflictStatus) return false;
+    if (filters.cylinderId && r.cylinderId !== filters.cylinderId) return false;
+    return true;
+  });
 }
 
 export const useReservationStore = create<ReservationState>((set, get) => ({
@@ -139,32 +127,8 @@ export const useReservationStore = create<ReservationState>((set, get) => ({
   deleteReservation: (id) =>
     set((state) => {
       const newRecords = state.reservations.filter((r) => r.id !== id);
-      const filteredAfter = newRecords.filter((r) => {
-        if (state.filters.search) {
-          const searchLower = state.filters.search.toLowerCase();
-          if (
-            !r.reservationNo.toLowerCase().includes(searchLower) &&
-            !r.cylinderTitle.toLowerCase().includes(searchLower) &&
-            !r.cylinderId.toLowerCase().includes(searchLower) &&
-            !r.applicant.toLowerCase().includes(searchLower)
-          ) {
-            return false;
-          }
-        }
-        if (state.filters.priority && r.priority !== state.filters.priority) return false;
-        if (state.filters.status && r.status !== state.filters.status) return false;
-        if (state.filters.conflictStatus && r.conflictStatus !== state.filters.conflictStatus) return false;
-        return true;
-      });
-
-      const totalPages = Math.ceil(filteredAfter.length / state.pageSize);
-      let newPage = state.page;
-      if (totalPages > 0 && state.page >= totalPages) {
-        newPage = totalPages - 1;
-      }
-      if (totalPages === 0) {
-        newPage = 0;
-      }
+      const filteredAfter = applyReservationFilters(newRecords, state.filters);
+      const newPage = calculatePageAfterDelete(state.page, state.pageSize, filteredAfter.length);
 
       return {
         reservations: newRecords,
@@ -209,29 +173,7 @@ export const useReservationStore = create<ReservationState>((set, get) => ({
 
   getFilteredReservations: () => {
     const { reservations, filters } = get();
-    return reservations.filter((r) => {
-      if (filters.search) {
-        const searchLower = filters.search.toLowerCase();
-        if (
-          !r.reservationNo.toLowerCase().includes(searchLower) &&
-          !r.cylinderTitle.toLowerCase().includes(searchLower) &&
-          !r.cylinderId.toLowerCase().includes(searchLower) &&
-          !r.applicant.toLowerCase().includes(searchLower)
-        ) {
-          return false;
-        }
-      }
-      if (filters.priority && r.priority !== filters.priority) return false;
-      if (filters.status && r.status !== filters.status) return false;
-      if (filters.conflictStatus && r.conflictStatus !== filters.conflictStatus) return false;
-      if (filters.cylinderId && r.cylinderId !== filters.cylinderId) return false;
-      if (filters.dateRange && filters.dateRange[0] && filters.dateRange[1]) {
-        if (r.endDate < filters.dateRange[0] || r.startDate > filters.dateRange[1]) {
-          return false;
-        }
-      }
-      return true;
-    });
+    return applyReservationFilters(reservations, filters);
   },
 
   setPage: (page) => set({ page }),
@@ -279,7 +221,7 @@ export const useReservationStore = create<ReservationState>((set, get) => ({
 
     const newRecord: ReservationRecord = {
       id: generateId('RES'),
-      reservationNo: generateReservationNo(),
+      reservationNo: generateNo('YY'),
       cylinderId: cylinder.id,
       cylinderTitle: cylinder.title,
       borrowType: data.borrowType || '馆内借阅',
@@ -523,23 +465,21 @@ export const useReservationStore = create<ReservationState>((set, get) => ({
 
   getStatistics: () => {
     const { reservations } = get();
-    const today = getTodayDateString();
-    const now = new Date();
-    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-    const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString().split('T')[0];
+    const thisMonthStart = getMonthStart();
+    const nextMonthStart = getNextMonthStart();
 
     const totalReservations = reservations.length;
-    const pendingApproval = reservations.filter((r) => r.status === '待审批').length;
-    const approved = reservations.filter((r) => r.status === '已批准').length;
-    const rejected = reservations.filter((r) => r.status === '已拒绝').length;
-    const completed = reservations.filter((r) => r.status === '已完成').length;
-    const cancelled = reservations.filter((r) => r.status === '已取消').length;
-    const conflictCount = reservations.filter((r) => r.conflictStatus === '有冲突').length;
-    const urgentCount = reservations.filter((r) => r.priority === '紧急').length;
-    const thisMonthCount = reservations.filter(
-      (r) => r.createdAt >= thisMonthStart && r.createdAt < nextMonthStart
-    ).length;
-    const convertedToBorrow = reservations.filter((r) => r.status === '已转借出').length;
+    const pendingApproval = countByFieldValue(reservations, 'status', '待审批');
+    const approved = countByFieldValue(reservations, 'status', '已批准');
+    const rejected = countByFieldValue(reservations, 'status', '已拒绝');
+    const completed = countByFieldValue(reservations, 'status', '已完成');
+    const cancelled = countByFieldValue(reservations, 'status', '已取消');
+    const conflictCount = countByFieldValue(reservations, 'conflictStatus', '有冲突');
+    const urgentCount = countByFieldValue(reservations, 'priority', '紧急');
+    const thisMonthCount = countByCondition(reservations, (r) =>
+      r.createdAt >= thisMonthStart && r.createdAt < nextMonthStart
+    );
+    const convertedToBorrow = countByFieldValue(reservations, 'status', '已转借出');
 
     return {
       totalReservations,

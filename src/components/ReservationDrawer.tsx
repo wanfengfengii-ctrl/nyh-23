@@ -29,6 +29,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import HowToRegIcon from '@mui/icons-material/HowToReg';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import EditIcon from '@mui/icons-material/Edit';
+import { TabPanel } from './shared';
 import { useReservationStore } from '../store/useReservationStore';
 import { useCylinderStore } from '../store/useCylinderStore';
 import { useBorrowStore } from '../store/useBorrowStore';
@@ -41,24 +42,6 @@ import {
 } from '../utils/formatters';
 import { canBorrow, getBorrowRestrictionReason } from '../utils/validators';
 import type { ReservationRecord, ReservationStatus, Cylinder, ReservationPriority, BorrowType } from '../types';
-
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
-
-const TabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => {
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      style={{ padding: '16px 24px 24px' }}
-    >
-      {value === index && <Box>{children}</Box>}
-    </div>
-  );
-};
 
 const InfoRow: React.FC<{ label: string; value: string; multiline?: boolean }> = ({ label, value, multiline }) => (
   <Box>
