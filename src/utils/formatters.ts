@@ -147,3 +147,61 @@ export function getReturnStatusColor(status: string): 'default' | 'primary' | 's
 export function getBorrowTypeColor(type: string): 'primary' | 'secondary' {
   return type === '馆内借阅' ? 'primary' : 'secondary';
 }
+
+export function getPriorityColor(priority: string): 'default' | 'primary' | 'warning' | 'error' {
+  switch (priority) {
+    case '普通':
+      return 'default';
+    case '优先':
+      return 'primary';
+    case '紧急':
+      return 'error';
+    default:
+      return 'default';
+  }
+}
+
+export function getReservationStatusColor(status: string): 'default' | 'primary' | 'success' | 'warning' | 'error' | 'info' {
+  switch (status) {
+    case '待审批':
+      return 'warning';
+    case '已批准':
+      return 'success';
+    case '已拒绝':
+      return 'error';
+    case '已取消':
+      return 'default';
+    case '已完成':
+      return 'info';
+    case '已转借出':
+      return 'primary';
+    default:
+      return 'default';
+  }
+}
+
+export function getConflictStatusColor(status: string): 'default' | 'success' | 'error' | 'warning' {
+  switch (status) {
+    case '无冲突':
+      return 'success';
+    case '有冲突':
+      return 'error';
+    case '冲突已解决':
+      return 'warning';
+    default:
+      return 'default';
+  }
+}
+
+export function getReminderStatusColor(status: string): 'default' | 'info' | 'success' | 'warning' {
+  switch (status) {
+    case '未提醒':
+      return 'default';
+    case '已提醒':
+      return 'success';
+    case '无需提醒':
+      return 'info';
+    default:
+      return 'default';
+  }
+}

@@ -4,10 +4,12 @@ import AlbumIcon from '@mui/icons-material/Album';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import BuildIcon from '@mui/icons-material/Build';
 import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
+import EventAvailableIcon from '@mui/icons-material/EventAvailable';
 import CylinderListPage from './pages/CylinderList';
 import StatisticsPage from './pages/Statistics';
 import RepairPage from './pages/RepairPage';
 import BorrowPage from './pages/BorrowPage';
+import ReservationPage from './pages/ReservationPage';
 
 function App() {
   const [tabValue, setTabValue] = useState(0);
@@ -73,6 +75,11 @@ function App() {
               iconPosition="start"
             />
             <Tab
+              label="预约排期"
+              icon={<EventAvailableIcon sx={{ fontSize: 18 }} />}
+              iconPosition="start"
+            />
+            <Tab
               label="统计分析"
               icon={<BarChartIcon sx={{ fontSize: 18 }} />}
               iconPosition="start"
@@ -85,7 +92,8 @@ function App() {
         {tabValue === 0 && <CylinderListPage />}
         {tabValue === 1 && <RepairPage />}
         {tabValue === 2 && <BorrowPage />}
-        {tabValue === 3 && <StatisticsPage />}
+        {tabValue === 3 && <ReservationPage />}
+        {tabValue === 4 && <StatisticsPage />}
       </Box>
     </Box>
   );

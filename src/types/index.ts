@@ -146,3 +146,63 @@ export interface BorrowStatistics {
   pendingApproval: number;
   damagePending: number;
 }
+
+export type ReservationPriority = '普通' | '优先' | '紧急';
+
+export type ReservationStatus = '待审批' | '已批准' | '已拒绝' | '已取消' | '已完成' | '已转借出';
+
+export type ConflictStatus = '无冲突' | '有冲突' | '冲突已解决';
+
+export type ReminderStatus = '未提醒' | '已提醒' | '无需提醒';
+
+export interface ReservationRecord {
+  id: string;
+  reservationNo: string;
+  cylinderId: string;
+  cylinderTitle: string;
+  borrowType: BorrowType;
+  priority: ReservationPriority;
+  startDate: string;
+  endDate: string;
+  status: ReservationStatus;
+  conflictStatus: ConflictStatus;
+  conflictReservationIds: string[];
+  reminderStatus: ReminderStatus;
+  adjustReason: string;
+  borrowPurpose: string;
+  applicant: string;
+  approver: string | null;
+  approvedAt: string | null;
+  createdAt: string;
+  relatedBorrowId: string | null;
+  remark: string;
+}
+
+export interface ReservationFilterState {
+  search: string;
+  priority: ReservationPriority | '';
+  status: ReservationStatus | '';
+  conflictStatus: ConflictStatus | '';
+  dateRange: [string, string] | null;
+  cylinderId: string;
+}
+
+export type ReservationEditMode = 'view' | 'create' | 'edit' | 'approve' | 'adjust' | 'convert';
+
+export interface ReservationStatistics {
+  totalReservations: number;
+  pendingApproval: number;
+  approved: number;
+  rejected: number;
+  completed: number;
+  cancelled: number;
+  conflictCount: number;
+  urgentCount: number;
+  thisMonthCount: number;
+  convertedToBorrow: number;
+}
+
+export interface BatchAdjustResult {
+  success: string[];
+  failed: { id: string; reason: string }[];
+}
