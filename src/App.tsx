@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { Box, Tabs, Tab, AppBar, Toolbar, Typography } from '@mui/material';
 import AlbumIcon from '@mui/icons-material/Album';
 import BarChartIcon from '@mui/icons-material/BarChart';
+import BuildIcon from '@mui/icons-material/Build';
 import CylinderListPage from './pages/CylinderList';
 import StatisticsPage from './pages/Statistics';
+import RepairPage from './pages/RepairPage';
 
 function App() {
   const [tabValue, setTabValue] = useState(0);
@@ -59,6 +61,11 @@ function App() {
               iconPosition="start"
             />
             <Tab
+              label="修复质检"
+              icon={<BuildIcon sx={{ fontSize: 18 }} />}
+              iconPosition="start"
+            />
+            <Tab
               label="统计分析"
               icon={<BarChartIcon sx={{ fontSize: 18 }} />}
               iconPosition="start"
@@ -69,7 +76,8 @@ function App() {
 
       <Box sx={{ height: 'calc(100vh - 56px)' }}>
         {tabValue === 0 && <CylinderListPage />}
-        {tabValue === 1 && <StatisticsPage />}
+        {tabValue === 1 && <RepairPage />}
+        {tabValue === 2 && <StatisticsPage />}
       </Box>
     </Box>
   );

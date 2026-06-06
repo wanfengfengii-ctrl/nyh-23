@@ -18,6 +18,14 @@ export function getStatusColor(status: string): 'default' | 'primary' | 'success
       return 'info';
     case '待修复':
       return 'warning';
+    case '修复中':
+      return 'primary';
+    case '待质检':
+      return 'warning';
+    case '质检未通过':
+      return 'error';
+    case '待指派':
+      return 'default';
     default:
       return 'default';
   }
@@ -64,4 +72,44 @@ export function getMaterialStatusColor(status: string): 'success' | 'info' | 'wa
     default:
       return 'info';
   }
+}
+
+export function getRepairStatusColor(status: string): 'default' | 'primary' | 'success' | 'warning' | 'error' | 'info' {
+  switch (status) {
+    case '待指派':
+      return 'default';
+    case '修复中':
+      return 'primary';
+    case '待质检':
+      return 'warning';
+    case '质检通过':
+      return 'success';
+    case '质检未通过':
+      return 'error';
+    case '已完成':
+      return 'info';
+    default:
+      return 'default';
+  }
+}
+
+export function getProblemTypeColor(type: string): 'default' | 'primary' | 'success' | 'warning' | 'error' | 'info' {
+  switch (type) {
+    case '裂纹':
+      return 'error';
+    case '噪声':
+      return 'warning';
+    case '磨损':
+      return 'info';
+    case '破损':
+      return 'error';
+    case '其他':
+      return 'default';
+    default:
+      return 'default';
+  }
+}
+
+export function getQualityCheckResultColor(result: string): 'success' | 'error' {
+  return result === '通过' ? 'success' : 'error';
 }

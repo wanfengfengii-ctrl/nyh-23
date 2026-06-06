@@ -9,21 +9,36 @@ import {
   Divider,
   Button,
   Chip,
+  Alert,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemButton,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import AddIcon from '@mui/icons-material/Add';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import { useCylinderStore } from '../store/useCylinderStore';
+import { useRepairStore } from '../store/useRepairStore';
 import CylinderForm from './CylinderForm';
 import CrackList from './CrackList';
+import OperationLogList from './OperationLogList';
 import {
   getStatusColor,
   getNoiseColor,
   getMaterialStatusColor,
+  getRepairStatusColor,
 } from '../utils/formatters';
-import { validateCylinder, hasSevereCrack } from '../utils/validators';
-import type { Cylinder } from '../types';
+import {
+  validateCylinder,
+  hasSevereCrack,
+  needsRepairTask,
+  canArchiveWithQualityCheck,
+} from '../utils/validators';
+import type { Cylinder, RepairProblemType } from '../types';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -54,6 +69,7 @@ const CylinderDrawer: React.FC = () => {
     editMode,
     setEditMode,
   } = useCylinderStore();
+  const { getRepairTasksByCylinderId, createRepairTaskForCylinder, openDrawer: openRepairDrawer } = useRepairStore();
 
   const [tabValue, setTabValue] = useState(0);
   const [formData, setFormData] = useState<Partial<Cylinder>>({});
@@ -61,6 +77,12 @@ const CylinderDrawer: React.FC = () => {
   const cylinder = selectedCylinderId
     ? getCylinderById(selectedCylinderId)
     : undefined;
+
+  const repairTasks = cylinder ? getRepairTasksByCylinderId(cylinder.id) : [];
+  const needRepair = cylinder ? needsRepairTask(cylinder) : false;
+  const hasActiveRepair = repairTasks.length > 0 && repairTasks.some(
+    (t) => t.status !== '已完成' && t.status !== '质检通过'
+  );
 
   useEffect(() => {
     if (drawerOpen) {
@@ -78,6 +100,9 @@ const CylinderDrawer: React.FC = () => {
           repairSuggestion: '',
           createdAt: new Date().toISOString().split('T')[0],
           cracks: [],
+          repairTaskIds: [],
+          lastQualityCheckResult: null,
+          lastQualityCheckedAt: null,
         });
       } else if (cylinder) {
         setFormData(cylinder);
@@ -114,16 +139,92 @@ const CylinderDrawer: React.FC = () => {
       return;
     }
 
+    if (formData.currentStatus === '已归档' && cylinder && !canArchiveWithQualityCheck({ ...cylinder, ...formData } as Cylinder)) {
+      alert('存在未通过质检的修复任务，不能归档');
+      return;
+    }
+
     if (editMode === 'create') {
-      addCylinder({
+      const newCylinder = {
         ...formData,
         cracks: [],
-      } as Cylinder);
+        repairTaskIds: [],
+        lastQualityCheckResult: null,
+        lastQualityCheckedAt: null,
+      } as Cylinder;
+      addCylinder(newCylinder);
+
+      if (needsRepairTask(newCylinder)) {
+        const problemTypes: RepairProblemType[] = [];
+        if (newCylinder.noiseLevel === '高' || newCylinder.noiseLevel === '严重') {
+          problemTypes.push('噪声');
+        }
+        if (hasSevereCrack(newCylinder)) {
+          problemTypes.push('裂纹');
+        }
+        if (newCylinder.materialStatus === '严重磨损') {
+          problemTypes.push('磨损');
+        }
+        if (newCylinder.materialStatus === '破损') {
+          problemTypes.push('破损');
+        }
+        if (problemTypes.length === 0) {
+          problemTypes.push('其他');
+        }
+
+        createRepairTaskForCylinder(
+          newCylinder,
+          problemTypes,
+          `系统自动创建：${problemTypes.join('、')}问题需要修复处理`
+        );
+      }
+
       closeDrawer();
     } else if (editMode === 'edit' && cylinder) {
       updateCylinder(cylinder.id, formData);
       setEditMode('view');
     }
+  };
+
+  const handleCreateRepairTask = () => {
+    if (!cylinder) return;
+
+    const problemTypes: RepairProblemType[] = [];
+    if (cylinder.noiseLevel === '高' || cylinder.noiseLevel === '严重') {
+      problemTypes.push('噪声');
+    }
+    if (hasSevereCrack(cylinder)) {
+      problemTypes.push('裂纹');
+    }
+    if (cylinder.materialStatus === '严重磨损') {
+      problemTypes.push('磨损');
+    }
+    if (cylinder.materialStatus === '破损') {
+      problemTypes.push('破损');
+    }
+    if (problemTypes.length === 0) {
+      problemTypes.push('其他');
+    }
+
+    const newTask = createRepairTaskForCylinder(
+      cylinder,
+      problemTypes,
+      cylinder.repairSuggestion || `需要进行${problemTypes.join('、')}修复处理`
+    );
+
+    updateCylinder(cylinder.id, {
+      repairTaskIds: [...cylinder.repairTaskIds, newTask.id],
+      currentStatus: '待修复',
+    });
+
+    alert('修复任务已创建');
+  };
+
+  const handleViewRepairTask = (taskId: string) => {
+    closeDrawer();
+    setTimeout(() => {
+      openRepairDrawer(taskId, 'view');
+    }, 300);
   };
 
   const isEditable = editMode === 'edit' || editMode === 'create';
@@ -233,6 +334,14 @@ const CylinderDrawer: React.FC = () => {
                 sx={{ fontWeight: 600 }}
               />
             )}
+            {needRepair && !hasActiveRepair && (
+              <Chip
+                label="需创建修复任务"
+                color="warning"
+                size="small"
+                sx={{ fontWeight: 600 }}
+              />
+            )}
           </Box>
           <Typography variant="h4" sx={{ fontWeight: 600, mb: 1.5 }}>
             {cylinder.title}
@@ -260,6 +369,31 @@ const CylinderDrawer: React.FC = () => {
               color={getStatusColor(cylinder.currentStatus)}
             />
           </Box>
+
+          {needRepair && !hasActiveRepair && (
+            <Alert severity="warning" sx={{ mt: 2, mb: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Typography variant="body2">
+                  该蜡筒存在高噪声或严重裂纹问题，根据规则必须创建修复任务。
+                </Typography>
+                <Button
+                  size="small"
+                  color="warning"
+                  startIcon={<AddIcon />}
+                  onClick={handleCreateRepairTask}
+                  sx={{ ml: 2, whiteSpace: 'nowrap' }}
+                >
+                  创建修复任务
+                </Button>
+              </Box>
+            </Alert>
+          )}
+
+          {cylinder.lastQualityCheckResult && cylinder.lastQualityCheckResult === '未通过' && (
+            <Alert severity="error" sx={{ mt: 2, mb: 1 }}>
+              质检未通过，不能归档。请完成修复后重新提交质检。
+            </Alert>
+          )}
         </Box>
       )}
 
@@ -275,6 +409,8 @@ const CylinderDrawer: React.FC = () => {
               <Tab label="基本信息" />
               <Tab label={`裂纹记录 (${cylinder.cracks.length})`} />
               <Tab label="修复建议" />
+              <Tab label={`修复任务 (${repairTasks.length})`} />
+              <Tab label="操作历史" />
             </Tabs>
           </Box>
 
@@ -288,6 +424,14 @@ const CylinderDrawer: React.FC = () => {
               <InfoRow label="噪声等级" value={cylinder.noiseLevel} />
               <InfoRow label="材质状态" value={cylinder.materialStatus} />
               <InfoRow label="创建日期" value={cylinder.createdAt} />
+              <InfoRow
+                label="最近质检结果"
+                value={cylinder.lastQualityCheckResult || '暂无'}
+              />
+              <InfoRow
+                label="最近质检日期"
+                value={cylinder.lastQualityCheckedAt || '-'}
+              />
             </Box>
           </TabPanel>
 
@@ -320,6 +464,70 @@ const CylinderDrawer: React.FC = () => {
                 </Typography>
               )}
             </Box>
+          </TabPanel>
+
+          <TabPanel value={tabValue} index={3}>
+            <Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                  修复任务列表
+                </Typography>
+                <Button
+                  size="small"
+                  startIcon={<AddIcon />}
+                  onClick={handleCreateRepairTask}
+                  variant="outlined"
+                >
+                  新建修复任务
+                </Button>
+              </Box>
+              {repairTasks.length === 0 ? (
+                <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: 'center' }}>
+                  暂无修复任务
+                </Typography>
+              ) : (
+                <List dense sx={{ width: '100%', bgcolor: 'background.paper' }}>
+                  {repairTasks.map((task) => (
+                    <ListItem
+                      key={task.id}
+                      disablePadding
+                      secondaryAction={
+                        <IconButton
+                          edge="end"
+                          size="small"
+                          onClick={() => handleViewRepairTask(task.id)}
+                        >
+                          <VisibilityIcon fontSize="small" />
+                        </IconButton>
+                      }
+                    >
+                      <ListItemButton>
+                        <ListItemText
+                          primary={
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <span style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>
+                                {task.id}
+                              </span>
+                              <Chip
+                                label={task.status}
+                                size="small"
+                                color={getRepairStatusColor(task.status)}
+                                sx={{ height: 20, '& .MuiChip-label': { px: 1, fontSize: '0.7rem' } }}
+                              />
+                            </Box>
+                          }
+                          secondary={task.title}
+                        />
+                      </ListItemButton>
+                    </ListItem>
+                  ))}
+                </List>
+              )}
+            </Box>
+          </TabPanel>
+
+          <TabPanel value={tabValue} index={4}>
+            <OperationLogList targetType="cylinder" targetId={cylinder.id} />
           </TabPanel>
         </>
       ) : (

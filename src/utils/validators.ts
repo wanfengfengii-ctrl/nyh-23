@@ -1,4 +1,4 @@
-import type { Cylinder, NoiseLevel } from '../types';
+import type { Cylinder, NoiseLevel, RepairTask, QualityCheckResult } from '../types';
 
 export function isIdUnique(
   cylinders: Cylinder[],
@@ -34,6 +34,33 @@ export function needsRepairSuggestion(
 
 export function hasSevereCrack(cylinder: Cylinder): boolean {
   return cylinder.cracks.some((c) => c.severity === '严重');
+}
+
+export function needsRepairTask(cylinder: Cylinder): boolean {
+  return isHighNoise(cylinder.noiseLevel) || hasSevereCrack(cylinder);
+}
+
+export function canArchiveWithQualityCheck(cylinder: Cylinder): boolean {
+  if (cylinder.transcriptionProgress !== 100) {
+    return false;
+  }
+  if (cylinder.repairTaskIds && cylinder.repairTaskIds.length > 0) {
+    return cylinder.lastQualityCheckResult === '通过';
+  }
+  return true;
+}
+
+export function canCompleteRepair(task: RepairTask): boolean {
+  return (
+    task.afterRepairNote.trim().length > 0 &&
+    task.repairMethod.trim().length > 0 &&
+    task.repairResult.trim().length > 0 &&
+    task.responsiblePerson.trim().length > 0
+  );
+}
+
+export function canStartQualityCheck(task: RepairTask): boolean {
+  return task.status === '待质检' && task.completedAt !== null;
 }
 
 export interface ValidationResult {
@@ -95,6 +122,76 @@ export function validateCylinder(
 
   if (!cylinder.currentStatus) {
     errors.currentStatus = '请选择当前状态';
+  }
+
+  return {
+    valid: Object.keys(errors).length === 0,
+    errors
+  };
+}
+
+export function validateRepairTask(
+  task: Partial<RepairTask>,
+  isEdit: boolean = false
+): ValidationResult {
+  const errors: Record<string, string> = {};
+
+  if (!task.title || task.title.trim() === '') {
+    errors.title = '修复任务标题不能为空';
+  }
+
+  if (!task.cylinderId) {
+    errors.cylinderId = '请选择关联的蜡筒';
+  }
+
+  if (!task.problemTypes || task.problemTypes.length === 0) {
+    errors.problemTypes = '请至少选择一种问题类型';
+  }
+
+  if (!task.description || task.description.trim() === '') {
+    errors.description = '请填写修复任务描述';
+  }
+
+  if (isEdit) {
+    if (task.status === '修复中' && !task.assignee) {
+      errors.assignee = '修复中状态必须指派负责人';
+    }
+
+    if ((task.status === '待质检' || task.status === '质检通过' || task.status === '已完成') && task.afterRepairNote?.trim() === '') {
+      errors.afterRepairNote = '修复完成后必须填写修复后记录';
+    }
+
+    if ((task.status === '待质检' || task.status === '质检通过' || task.status === '已完成') && task.repairMethod?.trim() === '') {
+      errors.repairMethod = '修复完成后必须填写修复方法';
+    }
+
+    if ((task.status === '待质检' || task.status === '质检通过' || task.status === '已完成') && task.repairResult?.trim() === '') {
+      errors.repairResult = '修复完成后必须填写处理结果';
+    }
+
+    if ((task.status === '待质检' || task.status === '质检通过' || task.status === '已完成') && task.responsiblePerson?.trim() === '') {
+      errors.responsiblePerson = '修复完成后必须填写责任人';
+    }
+  }
+
+  return {
+    valid: Object.keys(errors).length === 0,
+    errors
+  };
+}
+
+export function validateQualityCheck(
+  result: QualityCheckResult | null,
+  note: string
+): ValidationResult {
+  const errors: Record<string, string> = {};
+
+  if (!result) {
+    errors.result = '请选择质检结果';
+  }
+
+  if (!note || note.trim() === '') {
+    errors.note = '请填写质检说明';
   }
 
   return {

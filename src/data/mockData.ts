@@ -1,4 +1,4 @@
-import type { Cylinder } from '../types';
+import type { Cylinder, RepairTask, OperationLog } from '../types';
 
 export const mockCylinders: Cylinder[] = [
   {
@@ -21,7 +21,10 @@ export const mockCylinders: Cylinder[] = [
         description: '细小裂纹，不影响播放',
         discoveredAt: '2024-02-10'
       }
-    ]
+    ],
+    repairTaskIds: ['REP-001'],
+    lastQualityCheckResult: '通过',
+    lastQualityCheckedAt: '2024-03-01'
   },
   {
     id: 'CYL-002',
@@ -34,7 +37,10 @@ export const mockCylinders: Cylinder[] = [
     currentStatus: '转录中',
     repairSuggestion: '',
     createdAt: '2024-01-20',
-    cracks: []
+    cracks: [],
+    repairTaskIds: [],
+    lastQualityCheckResult: null,
+    lastQualityCheckedAt: null
   },
   {
     id: 'CYL-003',
@@ -44,7 +50,7 @@ export const mockCylinders: Cylinder[] = [
     storageLocation: 'B区-03-008',
     transcriptionProgress: 0,
     noiseLevel: '严重',
-    currentStatus: '待修复',
+    currentStatus: '修复中',
     repairSuggestion: '建议先进行表面清洁和物理修复，再尝试转录；使用降噪软件进行后期处理',
     createdAt: '2024-02-01',
     cracks: [
@@ -64,7 +70,10 @@ export const mockCylinders: Cylinder[] = [
         description: '边缘裂纹，不影响录音区域',
         discoveredAt: '2024-02-15'
       }
-    ]
+    ],
+    repairTaskIds: ['REP-002'],
+    lastQualityCheckResult: null,
+    lastQualityCheckedAt: null
   },
   {
     id: 'CYL-004',
@@ -74,10 +83,13 @@ export const mockCylinders: Cylinder[] = [
     storageLocation: 'A区-01-045',
     transcriptionProgress: 50,
     noiseLevel: '高',
-    currentStatus: '转录中',
+    currentStatus: '待质检',
     repairSuggestion: '建议使用专业降噪插件，保留原始音质前提下降低底噪',
     createdAt: '2024-02-10',
-    cracks: []
+    cracks: [],
+    repairTaskIds: ['REP-003'],
+    lastQualityCheckResult: null,
+    lastQualityCheckedAt: null
   },
   {
     id: 'CYL-005',
@@ -90,7 +102,10 @@ export const mockCylinders: Cylinder[] = [
     currentStatus: '已完成',
     repairSuggestion: '',
     createdAt: '2024-01-05',
-    cracks: []
+    cracks: [],
+    repairTaskIds: [],
+    lastQualityCheckResult: null,
+    lastQualityCheckedAt: null
   },
   {
     id: 'CYL-006',
@@ -100,7 +115,7 @@ export const mockCylinders: Cylinder[] = [
     storageLocation: 'B区-01-033',
     transcriptionProgress: 30,
     noiseLevel: '中',
-    currentStatus: '转录中',
+    currentStatus: '质检未通过',
     repairSuggestion: '',
     createdAt: '2024-03-01',
     cracks: [
@@ -112,7 +127,10 @@ export const mockCylinders: Cylinder[] = [
         description: '放射状裂纹，需谨慎处理',
         discoveredAt: '2024-03-10'
       }
-    ]
+    ],
+    repairTaskIds: ['REP-004'],
+    lastQualityCheckResult: '未通过',
+    lastQualityCheckedAt: '2024-04-10'
   },
   {
     id: 'CYL-007',
@@ -134,7 +152,10 @@ export const mockCylinders: Cylinder[] = [
         description: '多处裂纹伴随材质剥落，破损严重',
         discoveredAt: '2024-03-15'
       }
-    ]
+    ],
+    repairTaskIds: [],
+    lastQualityCheckResult: null,
+    lastQualityCheckedAt: null
   },
   {
     id: 'CYL-008',
@@ -147,7 +168,10 @@ export const mockCylinders: Cylinder[] = [
     currentStatus: '已归档',
     repairSuggestion: '',
     createdAt: '2024-02-20',
-    cracks: []
+    cracks: [],
+    repairTaskIds: [],
+    lastQualityCheckResult: null,
+    lastQualityCheckedAt: null
   },
   {
     id: 'CYL-009',
@@ -157,10 +181,13 @@ export const mockCylinders: Cylinder[] = [
     storageLocation: 'B区-02-019',
     transcriptionProgress: 0,
     noiseLevel: '高',
-    currentStatus: '待转录',
+    currentStatus: '待修复',
     repairSuggestion: '',
     createdAt: '2024-04-01',
-    cracks: []
+    cracks: [],
+    repairTaskIds: [],
+    lastQualityCheckResult: null,
+    lastQualityCheckedAt: null
   },
   {
     id: 'CYL-010',
@@ -182,7 +209,10 @@ export const mockCylinders: Cylinder[] = [
         description: '细小发丝纹，无影响',
         discoveredAt: '2024-04-05'
       }
-    ]
+    ],
+    repairTaskIds: [],
+    lastQualityCheckResult: null,
+    lastQualityCheckedAt: null
   },
   {
     id: 'CYL-011',
@@ -204,7 +234,10 @@ export const mockCylinders: Cylinder[] = [
         description: '环向裂纹，约占周长1/3',
         discoveredAt: '2024-02-01'
       }
-    ]
+    ],
+    repairTaskIds: ['REP-005'],
+    lastQualityCheckResult: null,
+    lastQualityCheckedAt: null
   },
   {
     id: 'CYL-012',
@@ -217,6 +250,210 @@ export const mockCylinders: Cylinder[] = [
     currentStatus: '已完成',
     repairSuggestion: '',
     createdAt: '2024-02-28',
-    cracks: []
+    cracks: [],
+    repairTaskIds: [],
+    lastQualityCheckResult: null,
+    lastQualityCheckedAt: null
   }
 ];
+
+export const mockRepairTasks: RepairTask[] = [
+  {
+    id: 'REP-001',
+    cylinderId: 'CYL-001',
+    title: '底部边缘微裂修复',
+    problemTypes: ['裂纹'],
+    description: '修复底部边缘细小裂纹，防止裂纹扩展',
+    status: '已完成',
+    assignee: '张修复师',
+    createdAt: '2024-02-12',
+    assignedAt: '2024-02-13',
+    startedAt: '2024-02-14',
+    completedAt: '2024-02-20',
+    beforeRepairNote: '底部边缘有发丝状裂纹，长度约5mm，未延伸至录音区域',
+    afterRepairNote: '裂纹已填充修复材料，表面打磨光滑，外观基本恢复',
+    beforeRepairImages: [],
+    afterRepairImages: [],
+    repairMethod: '微裂纹填充法',
+    repairResult: '裂纹已修复，结构稳定性提升',
+    responsiblePerson: '张修复师',
+    qualityCheckResult: '通过',
+    qualityCheckNote: '修复质量良好，裂纹已完全填充，不影响播放',
+    qualityCheckedBy: '李质检员',
+    qualityCheckedAt: '2024-03-01',
+    reworkCount: 0
+  },
+  {
+    id: 'REP-002',
+    cylinderId: 'CYL-003',
+    title: '严重裂纹与降噪综合修复',
+    problemTypes: ['裂纹', '噪声', '磨损'],
+    description: '中部严重裂纹修复 + 严重噪声处理 + 严重磨损修复',
+    status: '修复中',
+    assignee: '王修复师',
+    createdAt: '2024-02-16',
+    assignedAt: '2024-02-17',
+    startedAt: '2024-02-20',
+    completedAt: null,
+    beforeRepairNote: '中部螺旋纹有2cm纵向裂纹，伴严重磨损和高噪声',
+    afterRepairNote: '',
+    beforeRepairImages: [],
+    afterRepairImages: [],
+    repairMethod: '裂纹填充 + 表面修复 + 数字降噪',
+    repairResult: '',
+    responsiblePerson: '王修复师',
+    qualityCheckResult: null,
+    qualityCheckNote: '',
+    qualityCheckedBy: null,
+    qualityCheckedAt: null,
+    reworkCount: 0
+  },
+  {
+    id: 'REP-003',
+    cylinderId: 'CYL-004',
+    title: '高噪声降噪处理',
+    problemTypes: ['噪声'],
+    description: '使用专业降噪软件进行后期处理，降低背景噪声',
+    status: '待质检',
+    assignee: '陈修复师',
+    createdAt: '2024-03-05',
+    assignedAt: '2024-03-06',
+    startedAt: '2024-03-08',
+    completedAt: '2024-03-15',
+    beforeRepairNote: '高噪声水平，底噪明显，影响音质体验',
+    afterRepairNote: '已使用专业降噪插件进行多轮处理，噪声显著降低',
+    beforeRepairImages: [],
+    afterRepairImages: [],
+    repairMethod: '数字降噪处理',
+    repairResult: '噪声水平从高降至中等，音质明显改善',
+    responsiblePerson: '陈修复师',
+    qualityCheckResult: null,
+    qualityCheckNote: '',
+    qualityCheckedBy: null,
+    qualityCheckedAt: null,
+    reworkCount: 0
+  },
+  {
+    id: 'REP-004',
+    cylinderId: 'CYL-006',
+    title: '底部端面放射状裂纹修复',
+    problemTypes: ['裂纹'],
+    description: '修复底部端面放射状裂纹，首次质检未通过需返工',
+    status: '质检未通过',
+    assignee: '张修复师',
+    createdAt: '2024-03-12',
+    assignedAt: '2024-03-13',
+    startedAt: '2024-03-15',
+    completedAt: '2024-03-28',
+    beforeRepairNote: '底部端面有多条放射状裂纹，存在结构风险',
+    afterRepairNote: '裂纹已填充，但部分区域填充不平整',
+    beforeRepairImages: [],
+    afterRepairImages: [],
+    repairMethod: '裂纹填充加固法',
+    repairResult: '裂纹已填充，但表面平整度不达标',
+    responsiblePerson: '张修复师',
+    qualityCheckResult: '未通过',
+    qualityCheckNote: '修复表面平整度不达标，有明显填充痕迹，需返工处理',
+    qualityCheckedBy: '李质检员',
+    qualityCheckedAt: '2024-04-10',
+    reworkCount: 1
+  },
+  {
+    id: 'REP-005',
+    cylinderId: 'CYL-011',
+    title: '年代久远蜡筒综合修复评估',
+    problemTypes: ['磨损', '裂纹', '噪声'],
+    description: '1900年古旧蜡筒，需进行综合修复评估与处理',
+    status: '待指派',
+    assignee: null,
+    createdAt: '2024-04-01',
+    assignedAt: null,
+    startedAt: null,
+    completedAt: null,
+    beforeRepairNote: '年代久远，磨损严重，有环向裂纹，噪声严重',
+    afterRepairNote: '',
+    beforeRepairImages: [],
+    afterRepairImages: [],
+    repairMethod: '',
+    repairResult: '',
+    responsiblePerson: '',
+    qualityCheckResult: null,
+    qualityCheckNote: '',
+    qualityCheckedBy: null,
+    qualityCheckedAt: null,
+    reworkCount: 0
+  }
+];
+
+export const mockOperationLogs: OperationLog[] = [
+  {
+    id: 'LOG-001',
+    targetType: 'repairTask',
+    targetId: 'REP-001',
+    action: '创建修复任务',
+    description: '为蜡筒 CYL-001 创建修复任务',
+    operator: '系统管理员',
+    timestamp: '2024-02-12 09:30:00'
+  },
+  {
+    id: 'LOG-002',
+    targetType: 'repairTask',
+    targetId: 'REP-001',
+    action: '任务指派',
+    description: '将修复任务指派给张修复师',
+    operator: '王主管',
+    timestamp: '2024-02-13 10:00:00',
+    oldValue: '未指派',
+    newValue: '张修复师'
+  },
+  {
+    id: 'LOG-003',
+    targetType: 'repairTask',
+    targetId: 'REP-001',
+    action: '开始修复',
+    description: '张修复师开始执行修复工作',
+    operator: '张修复师',
+    timestamp: '2024-02-14 08:30:00'
+  },
+  {
+    id: 'LOG-004',
+    targetType: 'repairTask',
+    targetId: 'REP-001',
+    action: '修复完成',
+    description: '修复工作完成，提交质检',
+    operator: '张修复师',
+    timestamp: '2024-02-20 16:00:00'
+  },
+  {
+    id: 'LOG-005',
+    targetType: 'repairTask',
+    targetId: 'REP-001',
+    action: '质检通过',
+    description: '李质检员审核通过修复质量',
+    operator: '李质检员',
+    timestamp: '2024-03-01 14:00:00'
+  },
+  {
+    id: 'LOG-006',
+    targetType: 'cylinder',
+    targetId: 'CYL-001',
+    action: '状态变更',
+    description: '蜡筒状态从待修复变更为已归档',
+    operator: '系统',
+    timestamp: '2024-03-01 14:05:00',
+    oldValue: '待修复',
+    newValue: '已归档'
+  },
+  {
+    id: 'LOG-007',
+    targetType: 'repairTask',
+    targetId: 'REP-004',
+    action: '质检未通过',
+    description: '质检未通过，需返工处理',
+    operator: '李质检员',
+    timestamp: '2024-04-10 11:00:00'
+  }
+];
+
+export const repairStaff = ['张修复师', '王修复师', '陈修复师', '刘修复师'];
+export const qualityInspectors = ['李质检员', '赵质检员', '孙质检员'];
