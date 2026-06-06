@@ -292,7 +292,7 @@ const CylinderDrawer: React.FC = () => {
           </TabPanel>
 
           <TabPanel value={tabValue} index={1}>
-            <CrackList cylinderId={cylinder.id} editable />
+            <CrackList cylinderId={cylinder.id} editable={isEditable} />
           </TabPanel>
 
           <TabPanel value={tabValue} index={2}>

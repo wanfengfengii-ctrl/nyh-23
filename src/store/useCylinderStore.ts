@@ -67,9 +67,43 @@ export const useCylinderStore = create<CylinderState>((set, get) => ({
     })),
 
   deleteCylinder: (id) =>
-    set((state) => ({
-      cylinders: state.cylinders.filter((c) => c.id !== id),
-    })),
+    set((state) => {
+      const newCylinders = state.cylinders.filter((c) => c.id !== id);
+
+      const filteredAfter = newCylinders.filter((c) => {
+        if (state.filters.search) {
+          const searchLower = state.filters.search.toLowerCase();
+          if (
+            !c.id.toLowerCase().includes(searchLower) &&
+            !c.title.toLowerCase().includes(searchLower)
+          ) {
+            return false;
+          }
+        }
+        if (state.filters.status && c.currentStatus !== state.filters.status) return false;
+        if (state.filters.noiseLevel && c.noiseLevel !== state.filters.noiseLevel) return false;
+        if (state.filters.materialStatus && c.materialStatus !== state.filters.materialStatus) return false;
+        if (state.filters.hasSevereCrack !== null) {
+          const hasSevere = c.cracks.some((cr) => cr.severity === '严重');
+          if (state.filters.hasSevereCrack !== hasSevere) return false;
+        }
+        return true;
+      });
+
+      const totalPages = Math.ceil(filteredAfter.length / state.pageSize);
+      let newPage = state.page;
+      if (totalPages > 0 && state.page >= totalPages) {
+        newPage = totalPages - 1;
+      }
+      if (totalPages === 0) {
+        newPage = 0;
+      }
+
+      return {
+        cylinders: newCylinders,
+        page: newPage,
+      };
+    }),
 
   getCylinderById: (id) => get().cylinders.find((c) => c.id === id),
 

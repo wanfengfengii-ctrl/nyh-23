@@ -54,17 +54,25 @@ const StatisticsPage: React.FC = () => {
       .sort((a, b) => a.decade.localeCompare(b.decade));
   }, [cylinders]);
 
-  const statusDistribution = useMemo(() => {
-    const statusMap: Record<string, number> = {};
-    cylinders.forEach((c) => {
-      statusMap[c.currentStatus] = (statusMap[c.currentStatus] || 0) + 1;
-    });
-    return Object.entries(statusMap).map(([id, value], index) => ({
-      id,
-      label: id,
-      value,
-      color: COLORS[index % COLORS.length],
-    }));
+  const completionRate = useMemo(() => {
+    const completed = cylinders.filter(
+      (c) => c.transcriptionProgress === 100
+    ).length;
+    const notCompleted = cylinders.length - completed;
+    return [
+      {
+        id: '已完成',
+        label: '已完成',
+        value: completed,
+        color: '#2E7D32',
+      },
+      {
+        id: '未完成',
+        label: '未完成',
+        value: notCompleted,
+        color: '#9E9E9E',
+      },
+    ];
   }, [cylinders]);
 
   const noiseDistribution = useMemo(() => {
@@ -206,13 +214,13 @@ const StatisticsPage: React.FC = () => {
               <CardHeader
                 title="转录完成率"
                 titleTypographyProps={{ variant: 'h6', fontWeight: 600 }}
-                subheader="各状态蜡筒占比"
+                subheader="已完成与未完成转录占比"
               />
               <Divider />
               <CardContent sx={{ p: 0, '&:last-child': { pb: 0 } }}>
                 <Box sx={{ height: 320, width: '100%' }}>
                   <ResponsivePie
-                    data={statusDistribution}
+                    data={completionRate}
                     margin={{ top: 20, right: 80, bottom: 20, left: 80 }}
                     innerRadius={0.5}
                     padAngle={2}
@@ -237,7 +245,7 @@ const StatisticsPage: React.FC = () => {
                         stagger: true,
                       },
                     ]}
-                    fill={statusDistribution.map((d) => ({
+                    fill={completionRate.map((d) => ({
                       match: { id: d.id },
                       id: 'dots',
                     }))}
