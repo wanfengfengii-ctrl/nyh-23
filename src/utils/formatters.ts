@@ -113,3 +113,37 @@ export function getProblemTypeColor(type: string): 'default' | 'primary' | 'succ
 export function getQualityCheckResultColor(result: string): 'success' | 'error' {
   return result === '通过' ? 'success' : 'error';
 }
+
+export function getApprovalStatusColor(status: string): 'default' | 'primary' | 'success' | 'warning' | 'error' | 'info' {
+  switch (status) {
+    case '待审批':
+      return 'warning';
+    case '审批通过':
+      return 'success';
+    case '审批拒绝':
+      return 'error';
+    case '已撤销':
+      return 'default';
+    default:
+      return 'default';
+  }
+}
+
+export function getReturnStatusColor(status: string): 'default' | 'primary' | 'success' | 'warning' | 'error' | 'info' {
+  switch (status) {
+    case '未归还':
+      return 'info';
+    case '已归还':
+      return 'success';
+    case '超期':
+      return 'error';
+    case '损坏待复核':
+      return 'warning';
+    default:
+      return 'default';
+  }
+}
+
+export function getBorrowTypeColor(type: string): 'primary' | 'secondary' {
+  return type === '馆内借阅' ? 'primary' : 'secondary';
+}

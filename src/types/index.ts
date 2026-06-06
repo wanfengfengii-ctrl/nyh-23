@@ -94,3 +94,55 @@ export interface RepairFilterState {
 export type EditMode = 'view' | 'edit' | 'create';
 
 export type RepairEditMode = 'view' | 'edit' | 'create' | 'qualityCheck';
+
+export type BorrowType = '馆内借阅' | '外部借展';
+
+export type BorrowApprovalStatus = '待审批' | '审批通过' | '审批拒绝' | '已撤销';
+
+export type BorrowReturnStatus = '未归还' | '已归还' | '超期' | '损坏待复核';
+
+export interface BorrowRecord {
+  id: string;
+  applicationNo: string;
+  cylinderId: string;
+  cylinderTitle: string;
+  borrowType: BorrowType;
+  quantity: number;
+  borrowDate: string;
+  dueDate: string;
+  actualReturnDate: string | null;
+  approvalStatus: BorrowApprovalStatus;
+  borrowPurpose: string;
+  handoverRemark: string;
+  returnStatus: BorrowReturnStatus;
+  applicant: string;
+  approver: string | null;
+  approvedAt: string | null;
+  createdAt: string;
+  damageCheckNote: string;
+  damageCheckedBy: string | null;
+  damageCheckedAt: string | null;
+  conditionBefore: string;
+  conditionAfter: string;
+}
+
+export interface BorrowFilterState {
+  search: string;
+  borrowType: BorrowType | '';
+  approvalStatus: BorrowApprovalStatus | '';
+  returnStatus: BorrowReturnStatus | '';
+  dateRange: [string, string] | null;
+}
+
+export type BorrowEditMode = 'view' | 'create' | 'approve' | 'return' | 'damageCheck';
+
+export interface BorrowStatistics {
+  totalBorrows: number;
+  currentlyBorrowed: number;
+  overdue: number;
+  returned: number;
+  internalBorrows: number;
+  externalExhibitions: number;
+  pendingApproval: number;
+  damagePending: number;
+}

@@ -1,4 +1,4 @@
-import type { Cylinder, NoiseLevel, RepairTask, QualityCheckResult } from '../types';
+import type { Cylinder, NoiseLevel, RepairTask, QualityCheckResult, BorrowRecord } from '../types';
 
 export function isIdUnique(
   cylinders: Cylinder[],
@@ -192,6 +192,147 @@ export function validateQualityCheck(
 
   if (!note || note.trim() === '') {
     errors.note = '请填写质检说明';
+  }
+
+  return {
+    valid: Object.keys(errors).length === 0,
+    errors
+  };
+}
+
+export function canBorrow(cylinder: Cylinder): boolean {
+  if (cylinder.currentStatus !== '已归档') {
+    return false;
+  }
+  if (cylinder.cracks.some((c) => c.severity === '严重')) {
+    return false;
+  }
+  if (cylinder.noiseLevel === '高' || cylinder.noiseLevel === '严重') {
+    return false;
+  }
+  if (cylinder.materialStatus === '破损' || cylinder.materialStatus === '严重磨损') {
+    return false;
+  }
+  return true;
+}
+
+export function getBorrowRestrictionReason(cylinder: Cylinder): string[] {
+  const reasons: string[] = [];
+  if (cylinder.currentStatus !== '已归档') {
+    reasons.push('蜡筒未归档，不允许外借');
+  }
+  if (cylinder.cracks.some((c) => c.severity === '严重')) {
+    reasons.push('存在严重裂纹，禁止外借');
+  }
+  if (cylinder.noiseLevel === '高' || cylinder.noiseLevel === '严重') {
+    reasons.push('高噪声待修复，禁止外借');
+  }
+  if (cylinder.materialStatus === '破损') {
+    reasons.push('材质破损，禁止外借');
+  }
+  if (cylinder.materialStatus === '严重磨损') {
+    reasons.push('材质严重磨损，不建议外借');
+  }
+  return reasons;
+}
+
+export function isCylinderCurrentlyBorrowed(
+  cylinderId: string,
+  borrowRecords: BorrowRecord[]
+): boolean {
+  return borrowRecords.some(
+    (r) =>
+      r.cylinderId === cylinderId &&
+      r.approvalStatus === '审批通过' &&
+      (r.returnStatus === '未归还' || r.returnStatus === '超期' || r.returnStatus === '损坏待复核')
+  );
+}
+
+export function validateBorrowRecord(
+  record: Partial<BorrowRecord>,
+  cylinder: Cylinder | undefined,
+  allRecords: BorrowRecord[],
+  isEdit: boolean = false
+): ValidationResult {
+  const errors: Record<string, string> = {};
+
+  if (!record.cylinderId) {
+    errors.cylinderId = '请选择借阅的蜡筒';
+  } else if (cylinder) {
+    if (!canBorrow(cylinder)) {
+      const reasons = getBorrowRestrictionReason(cylinder);
+      errors.cylinderId = reasons.join('；');
+    }
+    if (!isEdit && isCylinderCurrentlyBorrowed(cylinder.id, allRecords)) {
+      errors.cylinderId = '该蜡筒当前有未归还的借阅记录，不能重复借出';
+    }
+  }
+
+  if (!record.borrowType) {
+    errors.borrowType = '请选择借阅类型';
+  }
+
+  if (!record.quantity || record.quantity <= 0) {
+    errors.quantity = '借出数量必须大于0';
+  }
+
+  if (!record.borrowDate) {
+    errors.borrowDate = '请选择借出日期';
+  }
+
+  if (!record.dueDate) {
+    errors.dueDate = '请选择应还日期';
+  } else if (record.borrowDate && record.dueDate < record.borrowDate) {
+    errors.dueDate = '应还日期不能早于借出日期';
+  }
+
+  if (!record.borrowPurpose || record.borrowPurpose.trim() === '') {
+    errors.borrowPurpose = '请填写借阅用途';
+  }
+
+  if (!record.applicant || record.applicant.trim() === '') {
+    errors.applicant = '请填写申请人';
+  }
+
+  return {
+    valid: Object.keys(errors).length === 0,
+    errors
+  };
+}
+
+export function validateBorrowReturn(
+  conditionAfter: string,
+  hasDamage: boolean,
+  damageNote: string
+): ValidationResult {
+  const errors: Record<string, string> = {};
+
+  if (!conditionAfter || conditionAfter.trim() === '') {
+    errors.conditionAfter = '请填写归还时状态';
+  }
+
+  if (hasDamage && (!damageNote || damageNote.trim() === '')) {
+    errors.damageNote = '状态变差时必须登记损坏复核说明';
+  }
+
+  return {
+    valid: Object.keys(errors).length === 0,
+    errors
+  };
+}
+
+export function validateBorrowApproval(
+  status: string,
+  approver: string
+): ValidationResult {
+  const errors: Record<string, string> = {};
+
+  if (!status) {
+    errors.status = '请选择审批结果';
+  }
+
+  if (!approver || approver.trim() === '') {
+    errors.approver = '请填写审批人';
   }
 
   return {

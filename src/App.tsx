@@ -3,9 +3,11 @@ import { Box, Tabs, Tab, AppBar, Toolbar, Typography } from '@mui/material';
 import AlbumIcon from '@mui/icons-material/Album';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import BuildIcon from '@mui/icons-material/Build';
+import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
 import CylinderListPage from './pages/CylinderList';
 import StatisticsPage from './pages/Statistics';
 import RepairPage from './pages/RepairPage';
+import BorrowPage from './pages/BorrowPage';
 
 function App() {
   const [tabValue, setTabValue] = useState(0);
@@ -66,6 +68,11 @@ function App() {
               iconPosition="start"
             />
             <Tab
+              label="借阅外借"
+              icon={<LibraryBooksIcon sx={{ fontSize: 18 }} />}
+              iconPosition="start"
+            />
+            <Tab
               label="统计分析"
               icon={<BarChartIcon sx={{ fontSize: 18 }} />}
               iconPosition="start"
@@ -77,7 +84,8 @@ function App() {
       <Box sx={{ height: 'calc(100vh - 56px)' }}>
         {tabValue === 0 && <CylinderListPage />}
         {tabValue === 1 && <RepairPage />}
-        {tabValue === 2 && <StatisticsPage />}
+        {tabValue === 2 && <BorrowPage />}
+        {tabValue === 3 && <StatisticsPage />}
       </Box>
     </Box>
   );
