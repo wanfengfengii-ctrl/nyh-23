@@ -73,10 +73,7 @@ const RepairTaskTable: React.FC = () => {
   };
 
   const handleAssign = (taskId: string) => {
-    const assignee = prompt('请输入修复人员姓名：');
-    if (assignee && assignee.trim()) {
-      assignTask(taskId, assignee.trim());
-    }
+    openDrawer(taskId, 'edit');
   };
 
   const handleChangePage = (_event: unknown, newPage: number) => {

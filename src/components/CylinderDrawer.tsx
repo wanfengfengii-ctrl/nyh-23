@@ -144,6 +144,23 @@ const CylinderDrawer: React.FC = () => {
       return;
     }
 
+    const tempCylinder = {
+      ...(cylinder || {}),
+      ...formData,
+    } as Cylinder;
+
+    const needsRepair = needsRepairTask(tempCylinder);
+    const currentRepairTasks = cylinder ? getRepairTasksByCylinderId(cylinder.id) : [];
+    const hasActiveRepair = currentRepairTasks.some(
+      (t) => t.status !== '已完成' && t.status !== '质检通过'
+    );
+
+    if (needsRepair && !hasActiveRepair && !window.confirm(
+      '该蜡筒存在高噪声或严重裂纹问题，根据规则必须创建修复任务。\n\n是否立即创建修复任务？\n\n点击"确定"创建修复任务，点击"取消"返回修改。'
+    )) {
+      return;
+    }
+
     if (editMode === 'create') {
       const newCylinder = {
         ...formData,
@@ -172,16 +189,55 @@ const CylinderDrawer: React.FC = () => {
           problemTypes.push('其他');
         }
 
-        createRepairTaskForCylinder(
+        const newTask = createRepairTaskForCylinder(
           newCylinder,
           problemTypes,
           `系统自动创建：${problemTypes.join('、')}问题需要修复处理`
         );
+
+        updateCylinder(newCylinder.id, {
+          repairTaskIds: [newTask.id],
+        });
       }
 
       closeDrawer();
     } else if (editMode === 'edit' && cylinder) {
       updateCylinder(cylinder.id, formData);
+
+      if (needsRepair && !hasActiveRepair) {
+        const problemTypes: RepairProblemType[] = [];
+        if (tempCylinder.noiseLevel === '高' || tempCylinder.noiseLevel === '严重') {
+          problemTypes.push('噪声');
+        }
+        if (hasSevereCrack(tempCylinder)) {
+          problemTypes.push('裂纹');
+        }
+        if (tempCylinder.materialStatus === '严重磨损') {
+          problemTypes.push('磨损');
+        }
+        if (tempCylinder.materialStatus === '破损') {
+          problemTypes.push('破损');
+        }
+        if (problemTypes.length === 0) {
+          problemTypes.push('其他');
+        }
+
+        const newTask = createRepairTaskForCylinder(
+          tempCylinder,
+          problemTypes,
+          `系统自动创建：${problemTypes.join('、')}问题需要修复处理`
+        );
+
+        const updatedTaskIds = [...(cylinder.repairTaskIds || []), newTask.id];
+        updateCylinder(cylinder.id, {
+          repairTaskIds: updatedTaskIds,
+        });
+
+        setTimeout(() => {
+          openRepairDrawer(newTask.id, 'edit');
+        }, 300);
+      }
+
       setEditMode('view');
     }
   };

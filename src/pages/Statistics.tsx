@@ -209,8 +209,8 @@ const StatisticsPage: React.FC = () => {
   }, [cylinders]);
 
   return (
-    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
-      <Box sx={{ px: 3, pt: 3, pb: 2 }}>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <Box sx={{ px: 3, pt: 3, pb: 2, flexShrink: 0 }}>
         <Typography variant="h4" sx={{ fontWeight: 700, color: 'primary.main', mb: 0.5 }}>
           统计分析
         </Typography>
@@ -219,12 +219,12 @@ const StatisticsPage: React.FC = () => {
         </Typography>
       </Box>
 
-      <Box sx={{ px: 3, pb: 3 }}>
+      <Box sx={{ px: 3, pb: 3, flex: 1, overflow: 'auto' }}>
         <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: 'primary.main' }}>
           档案概览
         </Typography>
         <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid item xs={12} sm={6} md={2.4}>
+          <Grid item xs={6} sm={4} md={2} lg={2}>
             <StatCard
               title="蜡筒总数"
               value={stats.total}
@@ -233,7 +233,7 @@ const StatisticsPage: React.FC = () => {
               subtitle="件藏品"
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={2.4}>
+          <Grid item xs={6} sm={4} md={2} lg={2}>
             <StatCard
               title="已转录完成"
               value={stats.completed}
@@ -242,7 +242,7 @@ const StatisticsPage: React.FC = () => {
               subtitle={`占比 ${stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0}%`}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={2.4}>
+          <Grid item xs={6} sm={4} md={2} lg={2}>
             <StatCard
               title="平均进度"
               value={`${stats.avgProgress}%`}
@@ -251,7 +251,7 @@ const StatisticsPage: React.FC = () => {
               subtitle="整体转录进度"
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={2.4}>
+          <Grid item xs={6} sm={4} md={2} lg={2}>
             <StatCard
               title="待修复"
               value={stats.toRepair}
@@ -260,7 +260,7 @@ const StatisticsPage: React.FC = () => {
               subtitle="需要修复处理"
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={2.4}>
+          <Grid item xs={6} sm={4} md={2} lg={2}>
             <StatCard
               title="严重裂纹"
               value={stats.severeCracks}
@@ -275,7 +275,7 @@ const StatisticsPage: React.FC = () => {
           修复与质检
         </Typography>
         <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid item xs={12} sm={6} md={2}>
+          <Grid item xs={6} sm={4} md={2} lg={2}>
             <StatCard
               title="修复任务总数"
               value={repairStats.total}
@@ -284,7 +284,7 @@ const StatisticsPage: React.FC = () => {
               subtitle="全部任务"
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={2}>
+          <Grid item xs={6} sm={4} md={2} lg={2}>
             <StatCard
               title="修复中"
               value={repairStats.inProgress}
@@ -293,7 +293,7 @@ const StatisticsPage: React.FC = () => {
               subtitle="正在处理"
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={2}>
+          <Grid item xs={6} sm={4} md={2} lg={2}>
             <StatCard
               title="修复完成率"
               value={`${repairStats.completionRate}%`}
@@ -302,7 +302,7 @@ const StatisticsPage: React.FC = () => {
               subtitle="已完成占比"
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={2}>
+          <Grid item xs={6} sm={4} md={2} lg={2}>
             <StatCard
               title="质检通过率"
               value={`${repairStats.qcPassRate}%`}
@@ -311,7 +311,7 @@ const StatisticsPage: React.FC = () => {
               subtitle="质检达标率"
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={2}>
+          <Grid item xs={6} sm={4} md={2} lg={2}>
             <StatCard
               title="待质检"
               value={repairStats.pendingQC}
@@ -320,7 +320,7 @@ const StatisticsPage: React.FC = () => {
               subtitle="等待审核"
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={2}>
+          <Grid item xs={6} sm={4} md={2} lg={2}>
             <StatCard
               title="质检未通过"
               value={repairStats.qcFailed}

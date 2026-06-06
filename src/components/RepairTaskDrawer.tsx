@@ -505,6 +505,39 @@ const RepairTaskDrawer: React.FC = () => {
               <InfoRow label="开始日期" value={task.startedAt || '-'} />
               <InfoRow label="完成日期" value={task.completedAt || '-'} />
               <InfoRow label="任务描述" value={task.description} />
+
+              {task.status === '待指派' && (
+                <Box sx={{ mt: 2, p: 2, bgcolor: 'warning.50', borderRadius: 1, border: '1px solid', borderColor: 'warning.200' }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5, color: 'warning.main' }}>
+                    任务指派
+                  </Typography>
+                  <FormControl fullWidth size="small" sx={{ mb: 1.5 }}>
+                    <InputLabel>选择修复人员</InputLabel>
+                    <Select
+                      value={formData.assignee || ''}
+                      label="选择修复人员"
+                      onChange={(e) => setFormData({ ...formData, assignee: e.target.value || null })}
+                    >
+                      <MenuItem value="">未指派</MenuItem>
+                      {repairStaff.map((person) => (
+                        <MenuItem key={person} value={person}>
+                          {person}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    color="warning"
+                    startIcon={<AssignmentIcon />}
+                    onClick={handleAssign}
+                    disabled={!formData.assignee}
+                  >
+                    确认指派
+                  </Button>
+                </Box>
+              )}
             </Box>
           </TabPanel>
 
