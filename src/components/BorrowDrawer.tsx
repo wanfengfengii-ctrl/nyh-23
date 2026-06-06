@@ -84,6 +84,7 @@ const BorrowDrawer: React.FC = () => {
     returnBorrow,
     completeDamageCheck,
     approvers,
+    getActualReturnStatus,
   } = useBorrowStore();
   const { cylinders, getCylinderById } = useCylinderStore();
 
@@ -126,7 +127,7 @@ const BorrowDrawer: React.FC = () => {
         setFormData(record);
         setSelectedCylinderId(record.cylinderId);
         setConditionAfter(record.conditionAfter);
-        setHasDamage(record.returnStatus === '损坏待复核');
+        setHasDamage(getActualReturnStatus(record) === '损坏待复核');
         setDamageNote(record.damageCheckNote);
         setDamageCheckNote(record.damageCheckNote);
         setApproverName(record.approver || '');
@@ -288,7 +289,7 @@ const BorrowDrawer: React.FC = () => {
             </Button>
           )}
           {isViewMode && record && record.approvalStatus === '审批通过' &&
-            record.returnStatus !== '已归还' && record.returnStatus !== '损坏待复核' && (
+            getActualReturnStatus(record) !== '已归还' && getActualReturnStatus(record) !== '损坏待复核' && (
             <Button
               size="small"
               startIcon={<AssignmentTurnedInIcon />}
@@ -306,7 +307,7 @@ const BorrowDrawer: React.FC = () => {
               归还登记
             </Button>
           )}
-          {isViewMode && record && record.returnStatus === '损坏待复核' && (
+          {isViewMode && record && getActualReturnStatus(record) === '损坏待复核' && (
             <Button
               size="small"
               startIcon={<BugReportIcon />}
@@ -665,8 +666,8 @@ const BorrowDrawer: React.FC = () => {
                 size="small"
               />
               <Chip
-                label={record.returnStatus}
-                color={getReturnStatusColor(record.returnStatus)}
+                label={getActualReturnStatus(record)}
+                color={getReturnStatusColor(getActualReturnStatus(record))}
                 size="small"
               />
             </Box>
@@ -722,7 +723,7 @@ const BorrowDrawer: React.FC = () => {
               <InfoRow label="审批状态" value={record.approvalStatus} />
               <InfoRow label="审批人" value={record.approver || '-'} />
               <InfoRow label="审批时间" value={record.approvedAt || '-'} />
-              <InfoRow label="归还状态" value={record.returnStatus} />
+              <InfoRow label="归还状态" value={getActualReturnStatus(record)} />
               <InfoRow label="损坏复核说明" value={record.damageCheckNote || '-'} multiline />
               <InfoRow label="损坏复核人" value={record.damageCheckedBy || '-'} />
               <InfoRow label="损坏复核时间" value={record.damageCheckedAt || '-'} />

@@ -53,6 +53,7 @@ interface BorrowState {
 
   getStatistics: () => BorrowStatistics;
   getBorrowHistory: (cylinderId: string) => BorrowRecord[];
+  getActualReturnStatus: (record: BorrowRecord) => BorrowReturnStatus;
 }
 
 const initialFilters: BorrowFilterState = {
@@ -77,6 +78,27 @@ function generateApplicationNo(): string {
 
 function getCurrentTimestamp(): string {
   return new Date().toISOString().replace('T', ' ').substring(0, 19);
+}
+
+function getTodayDateString(): string {
+  return new Date().toISOString().split('T')[0];
+}
+
+function getActualReturnStatus(record: BorrowRecord): BorrowReturnStatus {
+  if (record.returnStatus === '已归还' || record.returnStatus === '损坏待复核') {
+    return record.returnStatus;
+  }
+  if (record.approvalStatus !== '审批通过') {
+    return record.returnStatus;
+  }
+  if (!record.dueDate || record.actualReturnDate) {
+    return record.returnStatus;
+  }
+  const today = getTodayDateString();
+  if (record.dueDate < today) {
+    return '超期';
+  }
+  return record.returnStatus;
 }
 
 export const useBorrowStore = create<BorrowState>((set, get) => ({
@@ -190,7 +212,7 @@ export const useBorrowStore = create<BorrowState>((set, get) => ({
       }
       if (filters.borrowType && r.borrowType !== filters.borrowType) return false;
       if (filters.approvalStatus && r.approvalStatus !== filters.approvalStatus) return false;
-      if (filters.returnStatus && r.returnStatus !== filters.returnStatus) return false;
+      if (filters.returnStatus && getActualReturnStatus(r) !== filters.returnStatus) return false;
       if (filters.dateRange && filters.dateRange[0] && filters.dateRange[1]) {
         if (r.borrowDate < filters.dateRange[0] || r.borrowDate > filters.dateRange[1]) {
           return false;
@@ -314,26 +336,24 @@ export const useBorrowStore = create<BorrowState>((set, get) => ({
   },
 
   getStatistics: () => {
-    const { borrowRecords } = get();
-    const now = new Date().toISOString().split('T')[0];
+    const { borrowRecords, getActualReturnStatus: getStatus } = get();
 
     const totalBorrows = borrowRecords.length;
     const currentlyBorrowed = borrowRecords.filter(
-      (r) => r.approvalStatus === '审批通过' && (r.returnStatus === '未归还' || r.returnStatus === '超期' || r.returnStatus === '损坏待复核')
+      (r) => {
+        const actualStatus = getStatus(r);
+        return r.approvalStatus === '审批通过' &&
+          (actualStatus === '未归还' || actualStatus === '超期' || actualStatus === '损坏待复核');
+      }
     ).length;
     const overdue = borrowRecords.filter(
-      (r) =>
-        r.approvalStatus === '审批通过' &&
-        r.returnStatus !== '已归还' &&
-        r.dueDate &&
-        r.dueDate < now &&
-        (!r.actualReturnDate || r.actualReturnDate > r.dueDate)
+      (r) => getStatus(r) === '超期'
     ).length;
-    const returned = borrowRecords.filter((r) => r.returnStatus === '已归还').length;
+    const returned = borrowRecords.filter((r) => getStatus(r) === '已归还').length;
     const internalBorrows = borrowRecords.filter((r) => r.borrowType === '馆内借阅').length;
     const externalExhibitions = borrowRecords.filter((r) => r.borrowType === '外部借展').length;
     const pendingApproval = borrowRecords.filter((r) => r.approvalStatus === '待审批').length;
-    const damagePending = borrowRecords.filter((r) => r.returnStatus === '损坏待复核').length;
+    const damagePending = borrowRecords.filter((r) => getStatus(r) === '损坏待复核').length;
 
     return {
       totalBorrows,
@@ -352,4 +372,6 @@ export const useBorrowStore = create<BorrowState>((set, get) => ({
       .borrowRecords.filter((r) => r.cylinderId === cylinderId)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   },
+
+  getActualReturnStatus: (record) => getActualReturnStatus(record),
 }));

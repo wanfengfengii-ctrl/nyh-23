@@ -36,6 +36,7 @@ const BorrowTable: React.FC = () => {
     setPageSize,
     openDrawer,
     deleteBorrowRecord,
+    getActualReturnStatus,
   } = useBorrowStore();
 
   const filteredRecords = getFilteredRecords();
@@ -77,14 +78,15 @@ const BorrowTable: React.FC = () => {
   };
 
   const getRowStyle = (record: BorrowRecord) => {
-    if (record.returnStatus === '超期') {
+    const actualReturnStatus = getActualReturnStatus(record);
+    if (actualReturnStatus === '超期') {
       return {
         borderLeft: '4px solid #C62828',
         backgroundColor: 'rgba(198, 40, 40, 0.03) !important',
         position: 'relative' as const,
       };
     }
-    if (record.returnStatus === '损坏待复核') {
+    if (actualReturnStatus === '损坏待复核') {
       return {
         borderLeft: '4px solid #F57C00',
         backgroundColor: 'rgba(245, 124, 0, 0.03) !important',
@@ -99,13 +101,6 @@ const BorrowTable: React.FC = () => {
       };
     }
     return {};
-  };
-
-  const isOverdue = (record: BorrowRecord) => {
-    if (record.returnStatus === '已归还') return false;
-    if (!record.dueDate) return false;
-    const today = new Date().toISOString().split('T')[0];
-    return record.dueDate < today;
   };
 
   return (
@@ -138,7 +133,6 @@ const BorrowTable: React.FC = () => {
               </TableRow>
             ) : (
               paginatedRecords.map((record) => {
-                const overdue = isOverdue(record);
                 return (
                   <TableRow
                     key={record.id}
@@ -185,9 +179,9 @@ const BorrowTable: React.FC = () => {
                     <TableCell>
                       <Stack direction="row" spacing={0.5} alignItems="center">
                         <Chip
-                          label={overdue ? '超期' : record.returnStatus}
+                          label={getActualReturnStatus(record)}
                           size="small"
-                          color={overdue ? 'error' : getReturnStatusColor(record.returnStatus)}
+                          color={getReturnStatusColor(getActualReturnStatus(record))}
                         />
                       </Stack>
                     </TableCell>

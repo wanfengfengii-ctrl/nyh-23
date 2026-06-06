@@ -31,7 +31,7 @@ const BorrowPage: React.FC = () => {
 
       <Box sx={{ px: 3, pb: 2 }}>
         <Grid container spacing={2}>
-          <Grid item xs={12} sm={6} md={1.5}>
+          <Grid item xs={12} sm={6} md={4} lg={3}>
             <StatCard
               title="总借阅数"
               value={stats.totalBorrows}
@@ -40,7 +40,7 @@ const BorrowPage: React.FC = () => {
               subtitle="历史借阅总数"
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={1.5}>
+          <Grid item xs={12} sm={6} md={4} lg={3}>
             <StatCard
               title="借阅中"
               value={stats.currentlyBorrowed}
@@ -49,7 +49,7 @@ const BorrowPage: React.FC = () => {
               subtitle="当前借出数量"
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={1.5}>
+          <Grid item xs={12} sm={6} md={4} lg={3}>
             <StatCard
               title="已归还"
               value={stats.returned}
@@ -58,7 +58,7 @@ const BorrowPage: React.FC = () => {
               subtitle="正常归还数量"
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={1.5}>
+          <Grid item xs={12} sm={6} md={4} lg={3}>
             <StatCard
               title="超期"
               value={stats.overdue}
@@ -67,7 +67,7 @@ const BorrowPage: React.FC = () => {
               subtitle="超期未归还"
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={1.5}>
+          <Grid item xs={12} sm={6} md={4} lg={3}>
             <StatCard
               title="待审批"
               value={stats.pendingApproval}
@@ -76,7 +76,7 @@ const BorrowPage: React.FC = () => {
               subtitle="等待审批中"
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={1.5}>
+          <Grid item xs={12} sm={6} md={4} lg={3}>
             <StatCard
               title="损坏待复核"
               value={stats.damagePending}
@@ -85,7 +85,7 @@ const BorrowPage: React.FC = () => {
               subtitle="需损坏复核"
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={1.5}>
+          <Grid item xs={12} sm={6} md={4} lg={3}>
             <StatCard
               title="馆内借阅"
               value={stats.internalBorrows}
@@ -94,7 +94,7 @@ const BorrowPage: React.FC = () => {
               subtitle="馆内使用"
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={1.5}>
+          <Grid item xs={12} sm={6} md={4} lg={3}>
             <StatCard
               title="外部借展"
               value={stats.externalExhibitions}
